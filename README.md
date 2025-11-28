@@ -11,3 +11,8 @@ Code and data for **Tri-Bench: Stress-testing VLM spatial reasoning under camera
   - `run_vlm_inference.py`: run VLMs for the 400 images, with a fixed prompt and JSON format
   - `parse_json.py`: parse raw JSON responses into flat CSV
   - `evaluation.py`: generate analysis, i.e. tables/plots
+ 
+## License
+
+All code, data, and images in this repository are released under the Creative Commons Attribution 4.0 International (CC BY 4.0) license. Please see the `LICENSE` file for details.
+
