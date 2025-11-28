@@ -1,6 +1,11 @@
 # Tri-Bench
 
-Code and data for **Tri-Bench: Stress-testing VLM spatial reasoning under camera tilt and object interference** (AAAI 2026 TrustAgent workshop).
+Official Repo for **Tri-Bench: Stress-testing VLM spatial reasoning under camera tilt and object interference** (AAAI 2026 TrustAgent workshop).
+
+Paper Link: (to be provided)
+
+## Description
+The benchmark provides concrete data for stress-testing how capable are Vision Language Models (VLMs) when it comes to raw spatial reasoning skills. The stress-test we used here consists of six relative spatial reasoning Questions. The dataset is open under the mentioned licence, to be used for various different analyses in the future.
 
 ## Layout
 
@@ -14,5 +19,5 @@ Code and data for **Tri-Bench: Stress-testing VLM spatial reasoning under camera
  
 ## License
 
-All code, data, and images in this repository are released under the Creative Commons Attribution 4.0 International (CC BY 4.0) license. Please see the `LICENSE` file for details.
+All code, data, and images in this repo are released under CC BY 4.0 license. Please see the `LICENSE`.
 
