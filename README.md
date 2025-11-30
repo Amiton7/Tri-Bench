@@ -8,7 +8,7 @@ This repo contains the data and code for **Tri-Bench: Stress-Testing VLM Reliabi
 
 ## Overview
 
-Tri-Bench is a small benchmark for evaluating 3D spatial reasoning of Vision-Language Models (VLMs). It consists of **400 real photos** of triangles drawn inside a taped square border.  
+Tri-Bench is a diverse benchmark for evaluating 3D spatial reasoning of Vision-Language Models (VLMs). It consists of **400 real photos** of triangles drawn inside a taped square border.  
 Each image has:
 
 - 3D / physical triangle measurements,
