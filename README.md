@@ -22,7 +22,7 @@ The goal is to see how well VLMs handle **relative spatial reasoning** when we c
 
 ---
 
-## Repo layout (very roughly)
+## Layout
 
 - `images/`
   - `triangles_original/` – 400 original photos  
