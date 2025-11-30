@@ -1,6 +1,6 @@
 # Tri-Bench
 
-This repo contains the data and code for **Tri-Bench: Stress-Testing VLM Reliability on Spatial Reasoning under Camera Tilt and Object Interference** (AAAI 2026 TrustAgent workshop).
+This repository contains the data and code for **Tri-Bench: Stress-Testing VLM Reliability on Spatial Reasoning under Camera Tilt and Object Interference** (AAAI 2026 TrustAgent workshop).
 
 **Paper:** (link to be added)
 
@@ -60,5 +60,5 @@ The goal is to see how well VLMs handle **relative spatial reasoning** when we c
 
 ## License
 
-All code, data, and images in this repo are released under **CC BY 4.0**.  
+All code, data, and images in this repository are released under **CC BY 4.0**.  
 See `LICENSE` for details.
