@@ -47,7 +47,6 @@ VLM_ORDER = [
 SIDE_CLASSES = ["scalene", "isosceles", "equilateral"]
 ANGLE_CLASSES = ["acute", "obtuse", "right"]
 
-
 def load_and_merge(root: Path) -> pd.DataFrame:
     data_dir = root / "data"
 
@@ -66,7 +65,6 @@ def load_and_merge(root: Path) -> pd.DataFrame:
 
     print("merged df shape:", df.shape)
     return df
-
 
 def discover_prediction_columns(df: pd.DataFrame):
     """
@@ -101,29 +99,32 @@ def discover_prediction_columns(df: pd.DataFrame):
         print(" ", q, "→", sorted(m.keys()))
     return pred_cols
 
-
 def categorical_kappa(y_true: pd.Series, y_pred: pd.Series) -> pd.Series:
     yt = y_true.astype(str).str.strip().str.lower()
     yp = y_pred.astype(str).str.strip().str.lower()
     return (yt == yp).astype(float)
 
-
 def ratio_kappa(y_true: pd.Series, y_pred: pd.Series) -> pd.Series:
     t = pd.to_numeric(y_true, errors="coerce")
     p = pd.to_numeric(y_pred, errors="coerce")
     k = pd.Series(np.nan, index=t.index, dtype=float)
+
     mask = t.abs() > 1e-8
     err = (p[mask] - t[mask]).abs() / t[mask].abs()
+    err = err.clip(upper=1.0)
+
     k[mask] = 1.0 - err
     return k
-
 
 def angle_kappa(y_true: pd.Series, y_pred: pd.Series) -> pd.Series:
     t = pd.to_numeric(y_true, errors="coerce")
     p = pd.to_numeric(y_pred, errors="coerce")
-    err = (p - t).abs() / 180.0
-    return 1.0 - err
 
+    err = (p - t).abs() / 180.0
+    err = err.clip(upper=1.0)
+
+    k = 1.0 - err
+    return k
 
 def compute_per_image_accuracies(df: pd.DataFrame) -> pd.DataFrame:
     preds = discover_prediction_columns(df)
@@ -155,7 +156,6 @@ def compute_per_image_accuracies(df: pd.DataFrame) -> pd.DataFrame:
             acc_df[f"{model}_{q_label}_acc_2d"] = k2
 
     return acc_df
-
 
 def overall_accuracy_table(acc_df: pd.DataFrame) -> pd.DataFrame:
     """
@@ -279,12 +279,16 @@ def image_type_accuracy_table(root: Path, acc_df: pd.DataFrame) -> pd.DataFrame:
             )
 
     table = pd.DataFrame(rows)
-    order = ["P0", "T0", "P1", "T1"]
-    if not table.empty:
-        table["image_type"] = pd.Categorical(table["image_type"], order)
-        table = table.sort_values(["image_type", "question"]).reset_index(drop=True)
-    return table
+    type_order = ["P0", "P1", "T0", "T1"]
+    q_order = ["Q1", "Q2", "Q3", "Q4", "Q5", "Q6"]
 
+    if not table.empty:
+        table["image_type"] = pd.Categorical(table["image_type"], type_order)
+        table["question"] = pd.Categorical(table["question"], q_order)
+        # for each Q, we see rows in order P0, P1, T0, T1
+        table = table.sort_values(["question", "image_type"]).reset_index(drop=True)
+
+    return table
 
 def plot_image_type_accuracy(root: Path, cond_df: pd.DataFrame) -> None:
     """
@@ -297,7 +301,7 @@ def plot_image_type_accuracy(root: Path, cond_df: pd.DataFrame) -> None:
         return
 
     qs = ["Q1", "Q2", "Q3", "Q4", "Q5", "Q6"]
-    types = ["P0", "T0", "P1", "T1"]
+    types = ["P0", "P1", "T0", "T1"]
 
     pivot = cond_df.pivot(index="question", columns="image_type", values="accuracy_percent")
     pivot = pivot.reindex(index=qs, columns=types)
@@ -335,25 +339,25 @@ def main():
     acc_df.to_csv(acc_path, index=False)
     print("wrote:", acc_path)
 
-    # # Table 1: overall 3D / 2D accuracy per VLM
-    # t1 = overall_accuracy_table(acc_df)
-    # t1_path = root / "data" / "tri_bench_vlm_table_1_3D_vs_2D.csv"
-    # t1.to_csv(t1_path, index=False)
-    # print("wrote:", t1_path)
+    # Table 1: overall 3D / 2D accuracy per VLM
+    t1 = overall_accuracy_table(acc_df)
+    t1_path = root / "data" / "tri_bench_vlm_table_1_3D_vs_2D.csv"
+    t1.to_csv(t1_path, index=False)
+    print("wrote:", t1_path)
 
-    # # Table 2: class-wise accuracy for Q1/Q2
-    # t2 = class_accuracy_table(acc_df)
-    # t2_path = root / "data" / "tri_bench_vlm_table_2_shape_bias.csv"
-    # t2.to_csv(t2_path, index=False)
-    # print("wrote:", t2_path)
+    # Table 2: class-wise accuracy for Q1/Q2
+    t2 = class_accuracy_table(acc_df)
+    t2_path = root / "data" / "tri_bench_vlm_table_2_shape_bias.csv"
+    t2.to_csv(t2_path, index=False)
+    print("wrote:", t2_path)
 
-    # # Table 3 + plot: accuracy by question × image type (P0,T0,P1,T1)
-    # t3 = image_type_accuracy_table(root, acc_df)
-    # t3_path = root / "data" / "tri_bench_vlm_table_3_question_wise.csv"
-    # t3.to_csv(t3_path, index=False)
-    # print("wrote:", t3_path)
-    # if not t3.empty:
-    #     plot_image_type_accuracy(root, t3)
+    # Table 3 + plot: accuracy by question × image type (P0,T0,P1,T1)
+    t3 = image_type_accuracy_table(root, acc_df)
+    t3_path = root / "data" / "tri_bench_vlm_table_3_question_wise.csv"
+    t3.to_csv(t3_path, index=False)
+    print("wrote:", t3_path)
+    if not t3.empty:
+        plot_image_type_accuracy(root, t3)
 
 
 if __name__ == "__main__":

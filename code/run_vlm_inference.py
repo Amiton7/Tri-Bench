@@ -24,6 +24,7 @@ from tqdm.auto import tqdm
 import google.generativeai as genai
 import openai
 import requests
+from pathlib import Path
 
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY")
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
@@ -37,34 +38,13 @@ if OPENAI_API_KEY:
 else:
     openai_client = None
 
-PROMPT_TEXT = """
-The image shows triangle ABC whose vertices are the centres of three small coloured square stickers: A=RED, B=YELLOW, C=BLUE.
-A light-brown masking-tape square border surrounds the scene in the same plane as triangle ABC.
-All questions refer to triangle ABC. Angles are in DEGREES. ∠ABC denotes the interior angle at vertex B.
-Round all numeric answers to EXACTLY 4 decimals.
+def load_prompt() -> str:
+    prompt_path = Path(__file__).resolve().parent.parent / "prompts" / "tri_bench_prompt.txt"
+    return prompt_path.read_text(encoding="utf-8")
 
-Q1. Is triangle ABC equilateral, isosceles, or scalene?
-Q2. Is triangle ABC acute, right, or obtuse?
-Q3. In triangle ABC, by what factor is the length AB greater than length AC? (i.e., estimate AB ÷ AC)
-Q4. In triangle ABC, by how much do angles ∠ABC and ∠ACB differ? (i.e., estimate |∠ABC − ∠ACB| in degrees)
-Q5. In triangle ABC, what is (longest side) ÷ (shortest side)?
-Q6. In triangle ABC, what is (largest interior angle − smallest interior angle) in degrees?
-
-Return STRICT JSON ONLY — no prose, markdown, code fences, or extra keys.
-Use EXACTLY these keys; numbers must have exactly 4 decimals:
-
-- "side_type" → one of: "equilateral" | "isosceles" | "scalene"
-- "angle_type" → one of: "acute" | "right" | "obtuse"
-- "ab_over_ac" → number with 4 decimals
-- "abs_b_minus_c_deg" → number with 4 decimals
-- "max_over_min_side" → number with 4 decimals
-- "angle_range_deg" → number with 4 decimals
-
-Output only the JSON object with these six keys and the computed values for THIS image.
-"""
+PROMPT_TEXT = load_prompt()
 
 MAX_OUTPUT_TOKENS = 512
-
 
 def encode_image(image_path: str) -> str:
     with open(image_path, "rb") as f:

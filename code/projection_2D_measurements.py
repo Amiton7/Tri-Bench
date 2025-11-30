@@ -1,16 +1,12 @@
-#!/usr/bin/env python3
 """
-Pixel-space triangle measurements for Tri-Bench.
-
-Usage:
-    python measure_triangle.py path/to/image.jpg
+Measuring triangles in Image Plane for Tri-Bench.
 
 What it does:
 - Opens the image.
 - You click the centres of the coloured stickers in order:
     A = RED, B = YELLOW, C = BLUE.
 - Draws an overlay with the triangle and labels and saves it to overlays/.
-- Appends a row to measurements.csv with:
+- Appends a row to the 2D measurements csv with:
     - pixel coordinates of A, B, C
     - side lengths in pixels
     - interior angles in degrees
@@ -29,6 +25,8 @@ import argparse
 import cv2
 import numpy as np
 from PIL import Image, ImageOps
+from geometry_utils import triangle_angles, derived_metrics_from_triangle
+
 
 CSV_PATH = "measurements.csv"
 OVERLAY_DIR = "overlays"
@@ -43,12 +41,6 @@ CSV_FIELDS = [
     "max_over_min_side", "angle_range_deg",
 ]
 
-# ~1.5% side-length tolerance for "equal"
-TOL_EQ = 0.015
-# degree tolerance around 90° for "right"
-TOL_RIGHT = 1.0
-
-
 def load_rgb(path):
     im = Image.open(path)
     im = ImageOps.exif_transpose(im)
@@ -62,34 +54,6 @@ def dist(p, q):
     q = np.array(q, dtype=float)
     return float(np.linalg.norm(p - q))
 
-
-def triangle_angles(a, b, c):
-    def safe_acos(x):
-        x = max(-1.0, min(1.0, x))
-        return math.degrees(math.acos(x))
-
-    A = safe_acos((b * b + c * c - a * a) / (2 * b * c))
-    B = safe_acos((a * a + c * c - b * b) / (2 * a * c))
-    C = 180.0 - A - B
-    return A, B, C
-
-
-def side_type_from_lengths(AB, BC, CA):
-    s = sorted([AB, BC, CA])
-    eq01 = abs(s[0] - s[1]) <= TOL_EQ * max(s[0], s[1])
-    eq12 = abs(s[1] - s[2]) <= TOL_EQ * max(s[1], s[2])
-    if eq01 and eq12:
-        return "equilateral"
-    if eq01 or eq12:
-        return "isosceles"
-    return "scalene"
-
-
-def angle_type_from_angles(A, B, C):
-    mx = max(A, B, C)
-    if abs(mx - 90.0) <= TOL_RIGHT:
-        return "right"
-    return "obtuse" if mx > 90.0 else "acute"
 
 
 def fmt4(x):
@@ -146,9 +110,9 @@ def click_points(img_bgr):
             cv2.line(frame, pts[2], pts[0], (255, 255, 255), 2)
         cv2.imshow(win, frame)
         k = cv2.waitKey(16) & 0xFF
-        if k == 27:  # Esc → reset
+        if k == 27:  # Press Esc to reset
             pts = []
-        if len(pts) == 3 and k in (10, 13):  # Enter → accept
+        if len(pts) == 3 and k in (10, 13):  # Press Enter to accept
             cv2.destroyWindow(win)
             return pts
 
@@ -175,13 +139,9 @@ def main():
     a, b, c = BC, CA, AB
     Adeg, Bdeg, Cdeg = triangle_angles(a, b, c)
 
-    side_t = side_type_from_lengths(AB, BC, CA)
-    angle_t = angle_type_from_angles(Adeg, Bdeg, Cdeg)
-
-    ab_over_ac = AB / CA if CA > 0 else float("nan")
-    abs_b_minus_c = abs(Bdeg - Cdeg)
-    max_over_min = max(AB, BC, CA) / min(AB, BC, CA) if min(AB, BC, CA) > 0 else float("inf")
-    angle_range = max(Adeg, Bdeg, Cdeg) - min(Adeg, Bdeg, Cdeg)
+    metrics = derived_metrics_from_triangle(AB, BC, CA, Adeg, Bdeg, Cdeg)
+    side_t = metrics["side_type"]
+    angle_t = metrics["angle_type"]
 
     # Overlay (for sanity-checking clicks)
     overlay = img_bgr.copy()
@@ -207,10 +167,10 @@ def main():
         "A_deg": fmt4(Adeg), "B_deg": fmt4(Bdeg), "C_deg": fmt4(Cdeg),
         "side_type": side_t,
         "angle_type": angle_t,
-        "ab_over_ac": fmt4(ab_over_ac),
-        "abs_b_minus_c_deg": fmt4(abs_b_minus_c),
-        "max_over_min_side": fmt4(max_over_min),
-        "angle_range_deg": fmt4(angle_range),
+        "ab_over_ac": fmt4(metrics["ab_over_ac"]),
+        "abs_b_minus_c_deg": fmt4(metrics["abs_b_minus_c_deg"]),
+        "max_over_min_side": fmt4(metrics["max_over_min_side"]),
+        "angle_range_deg": fmt4(metrics["angle_range_deg"]),
     }
     append_row(row)
 
@@ -223,11 +183,12 @@ def main():
     out = {
         "side_type": side_t,
         "angle_type": angle_t,
-        "ab_over_ac": fmt4(ab_over_ac),
-        "abs_b_minus_c_deg": fmt4(abs_b_minus_c),
-        "max_over_min_side": fmt4(max_over_min),
-        "angle_range_deg": fmt4(angle_range),
+        "ab_over_ac": fmt4(metrics["ab_over_ac"]),
+        "abs_b_minus_c_deg": fmt4(metrics["abs_b_minus_c_deg"]),
+        "max_over_min_side": fmt4(metrics["max_over_min_side"]),
+        "angle_range_deg": fmt4(metrics["angle_range_deg"]),
     }
+
     print(json.dumps(out, separators=(",", ":")))
 
 
