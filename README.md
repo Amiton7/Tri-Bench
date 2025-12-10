@@ -2,7 +2,7 @@
 
 This repository contains the data and code for **Tri-Bench: Stress-Testing VLM Reliability on Spatial Reasoning under Camera Tilt and Object Interference** (AAAI 2026 TrustAgent workshop).
 
-**Paper:** (link to be added)
+**Paper (arXiv for now):** https://arxiv.org/pdf/2512.08860
 
 ---
 
